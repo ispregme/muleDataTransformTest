@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:data-mapper="http://www.mulesoft.org/schema/mule/ee/data-mapper" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schema/mule/ee/data-mapper/current/mule-data-mapper.xsd">
+    <http:listener-config name="HTTP_Listener_Configuration" host="users.dsic.upv.es" port="80" doc:name="HTTP Listener Configuration"/>
+    <db:mysql-config name="MySQL_Configuration" host="iap.c8rqb14cuaul.us-east-1.rds.amazonaws.com" port="3306" user="root" password="rootiap15" database="iap" doc:name="MySQL Configuration"/>
+    <data-mapper:config name="XML_To_JSON" transformationGraphPath="xml_to_json.grf" doc:name="XML_To_JSON"/>
+    <http:request-config name="HTTP_Request_Configuration" host="users.dsic.upv.es" port="80" doc:name="HTTP Request Configuration"/>
+    <flow name="portafolio1bFlow">
+        <poll doc:name="Poll">
+            <http:request config-ref="HTTP_Request_Configuration" path="/~jjfons/iap/ex1/coords.csv" method="GET" doc:name="HTTP"/>
+        </poll>
+        <object-to-string-transformer doc:name="Object to String"/>
+        <splitter expression="#[org.mule.util.StringUtils.split(message.payload, '\n\r')]" doc:name="Copy_of_deCSVaFilas"/>
+        <expression-transformer expression="#[org.mule.util.StringUtils.split(message.payload, ',')]" doc:name="Copy_of_deFilasAColumnas"/>
+        <db:insert config-ref="MySQL_Configuration" doc:name="Copy_of_toDatabase">
+            <db:parameterized-query><![CDATA[INSERT INTO locations(title, description, latitud, longitud)
+VALUES(
+	   #[message.payload[0]],
+	   #[message.payload[1]],
+	   #[message.payload[2]],
+	   #[message.payload[3]]
+)]]></db:parameterized-query>
+        </db:insert>
+    </flow>
+    <flow name="portafolio1bFlow1">
+        <poll doc:name="Poll">
+            <http:request config-ref="HTTP_Request_Configuration" path="/~jjfons/iap/ex1/coords.json" method="GET" doc:name="HTTP"/>
+        </poll>
+        <json:object-to-json-transformer doc:name="Object to JSON"/>
+        <json:json-to-object-transformer returnClass="java.util.List" mimeType="text/json" doc:name="Copy_of_JSON a JavaList"/>
+        <foreach collection="#[message.payload]" counterVariableName="counter1" doc:name="Copy_of_For Each">
+            <db:insert config-ref="MySQL_Configuration" doc:name="Copy_of_Database">
+                <db:parameterized-query><![CDATA[INSERT INTO locations(title, description, latitud, longitud)
+VALUES(
+	   #[payload.properties.name],
+	   #[payload.properties.desc],
+	   #[payload.coordinates[0]],
+	   #[payload.coordinates[1]]
+)]]></db:parameterized-query>
+            </db:insert>
+        </foreach>
+    </flow>
+    <flow name="portafolio1bFlow2">
+        <poll doc:name="Poll">
+            <http:request config-ref="HTTP_Request_Configuration" path="/~jjfons/iap/ex1/coords.kml" method="GET" doc:name="HTTP"/>
+        </poll>
+        <mulexml:object-to-xml-transformer doc:name="Object to XML"/>
+        <data-mapper:transform doc:name="XML To JSON" config-ref="XML_To_JSON"/>
+        <json:json-to-object-transformer returnClass="java.util.List" mimeType="text/json" doc:name="JSON a JavaList"/>
+        <foreach collection="#[message.payload]" counterVariableName="counter2" doc:name="Copy_of_For Each">
+            <db:insert config-ref="MySQL_Configuration" doc:name="Copy_of_Database">
+                <db:parameterized-query><![CDATA[INSERT INTO locations(title, description, latitud, longitud)
+VALUES(
+	   #[payload.name],
+	   #[payload.description],
+       #[org.mule.util.StringUtils.split(payload.Point.coordinates, ",")[0]],
+	   #[org.mule.util.StringUtils.split(payload.Point.coordinates, ",")[1]]
+)]]></db:parameterized-query>
+            </db:insert>
+        </foreach>
+    </flow>
+
+</mule>
+

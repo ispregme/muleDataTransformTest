@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:data-mapper="http://www.mulesoft.org/schema/mule/ee/data-mapper" xmlns:metadata="http://www.mulesoft.org/schema/mule/metadata" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:pop3="http://www.mulesoft.org/schema/mule/pop3" xmlns:imap="http://www.mulesoft.org/schema/mule/imap" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/imap http://www.mulesoft.org/schema/mule/imap/current/mule-imap.xsd
+http://www.mulesoft.org/schema/mule/pop3 http://www.mulesoft.org/schema/mule/pop3/current/mule-pop3.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/ee/data-mapper http://www.mulesoft.org/schema/mule/ee/data-mapper/current/mule-data-mapper.xsd">
+    <db:mysql-config name="MySQL_Configuration" host="iap.c8rqb14cuaul.us-east-1.rds.amazonaws.com" port="3306" user="root" password="rootiap15" database="iap" doc:name="MySQL Configuration"/>
+    <http:request-config name="HTTP_Request_Configuration" host="users.dsic.upv.es" port="80" doc:name="HTTP Request Configuration"/>
+    <file:connector name="File" readFromDirectory="/Users/alejandro/Desktop/fileportafolio" autoDelete="false" streaming="true" validateConnections="true" doc:name="File">
+        <file:expression-filename-parser/>
+    </file:connector>
+    <data-mapper:config name="XML_To_Map" transformationGraphPath="xml_to_map.grf" doc:name="XML_To_Map"/>
+    <flow name="portafolio1Flow">
+        <file:inbound-endpoint path="/Users/alejandro/Desktop/fileportafolio" connector-ref="File" responseTimeout="10000" doc:name="File" pollingFrequency="1000000000"/>
+        <set-variable value="#[originalFilename]" variableName="originalFilename" doc:name="Set originalFilename" />
+        <set-variable value="#[org.apache.commons.io.FilenameUtils.getExtension(originalFilename)]" variableName="extension" doc:name="Set extension" />
+        <choice doc:name="Choice">
+            <when expression="#[flowVars['extension']==&quot;csv&quot;]">
+                <file:file-to-string-transformer doc:name="CSV to String"/>
+                <splitter expression="#[org.mule.util.StringUtils.split(message.payload, '\n\r')]" doc:name="deCSVaFilas"/>
+                <expression-transformer expression="#[org.mule.util.StringUtils.split(message.payload, ',')]" doc:name="deFilasAColumnas"/>
+                <db:insert config-ref="MySQL_Configuration" doc:name="toDatabase">
+                    <db:parameterized-query><![CDATA[INSERT INTO locations(title, description, latitud, longitud)
+VALUES(
+	   #[message.payload[0]],
+	   #[message.payload[1]],
+	   #[message.payload[2]],
+	   #[message.payload[3]]
+)]]></db:parameterized-query>
+                </db:insert>
+            </when>
+            <when expression="#[flowVars['extension']==&quot;json&quot;]">
+                <json:json-to-object-transformer returnClass="java.util.List" mimeType="text/json" doc:name="JSON a JavaList"/>
+                <foreach collection="#[message.payload]" doc:name="For Each">
+                    <db:insert config-ref="MySQL_Configuration" doc:name="Database">
+                        <db:parameterized-query><![CDATA[INSERT INTO locations(title, description, latitud, longitud)
+VALUES(
+	   #[payload.properties.name],
+	   #[payload.properties.desc],
+	   #[payload.coordinates[0]],
+	   #[payload.coordinates[1]]
+)]]></db:parameterized-query>
+                    </db:insert>
+                </foreach>
+            </when>
+            <otherwise>
+                <data-mapper:transform config-ref="XML_To_Map" doc:name="XML To Map"/>
+                <db:insert config-ref="MySQL_Configuration" doc:name="Database">
+                    <db:parameterized-query><![CDATA[INSERT INTO locations(title, description, latitud, longitud)
+VALUES(
+	   #[payload[0].name],
+	   #[payload[0].description],
+	   #[org.mule.util.StringUtils.split(payload[0].Point.coordinates, ",")[0]],
+	   #[org.mule.util.StringUtils.split(payload[0].Point.coordinates, ",")[1]]
+)]]></db:parameterized-query>
+                </db:insert>
+            </otherwise>
+        </choice>
+    </flow>
+</mule>

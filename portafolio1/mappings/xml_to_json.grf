@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?><Graph __version="3.5.0" author="alejandro" created="Wed Nov 11 15:15:18 CET 2015" description="XML To JSON" guiVersion="3.4.4.P" id="1447255720709" licenseCode="Unlicensed" licenseType="Unknown" modified="Wed Nov 11 15:15:18 CET 2015" modifiedBy="alejandro" name="XML_To_JSON" preview-file="/Users/alejandro/Desktop/fileportafolio/coords.kml" revision="1.0" showComponentDetails="false">
+<Global>
+<Metadata __index="0" __referenceCounter="1" __sourcePath="{}/array" _dataStructure="SINGLE_DIMENSIONAL_COLLECTION" _id="__id" _type="Output" id="0265723c-4b5d-4f41-81a1-f1196a741113">
+<Record fieldDelimiter="," name="array" recordDelimiter="\n\\|\r\n\\|\r" type="delimited">
+<Field __artificialType="_id" __systemManaged="true" name="__id" type="string"/>
+<Field __index="0" __sourcePath="{}/array/name" containerType="SINGLE" label="name" name="name" type="string"/>
+<Field __index="1" __sourcePath="{}/array/description" containerType="SINGLE" label="description" name="description" type="string"/>
+<Field __index="2" __sourcePath="{}/array/Point/coordinates" containerType="SINGLE" label="coordinates" name="coordinates" type="string"/>
+</Record>
+</Metadata>
+<Metadata __filteredMetadata="false" __index="0" __referenceCounter="0" __schemaType="kmlType" __sourcePath="{}/kml" _dataStructure="OBJECT" _id="__id" _type="Input" id="0f375baf-d186-469b-8684-6cfe484cc17d">
+<Record fieldDelimiter="," name="kml" recordDelimiter="\n\\|\r\n\\|\r" type="delimited">
+<Field __artificialType="_id" __systemManaged="true" name="__id" type="string"/>
+</Record>
+</Metadata>
+<Metadata __index="0" __referenceCounter="1" __schemaType="PlacemarkType" __sourcePath="{}/kml/Placemark" _dataStructure="SINGLE_DIMENSIONAL_COLLECTION" _id="__id" _metadataParentId="0f375baf-d186-469b-8684-6cfe484cc17d" _parent_id="__parent_id" _type="Input" id="ed64796e-cffe-404a-87f0-d806a1530f07">
+<Record fieldDelimiter="," name="Placemark" recordDelimiter="\n\\|\r\n\\|\r" type="delimited">
+<Field __artificialType="_parent_id" __systemManaged="true" name="__parent_id" type="string"/>
+<Field __artificialType="_id" __systemManaged="true" name="__id" type="string"/>
+<Field __index="0" __schemaType="PlacemarkType" __sourcePath="{}/kml/Placemark/name" containerType="SINGLE" label="name" name="name" type="string"/>
+<Field __index="1" __schemaType="PlacemarkType" __sourcePath="{}/kml/Placemark/description" containerType="SINGLE" label="description" name="description" type="string"/>
+<Field __index="2" __schemaType="PointType" __sourcePath="{}/kml/Placemark/Point/coordinates" containerType="SINGLE" label="coordinates" name="coordinates" type="string"/>
+</Record>
+</Metadata>
+<Dictionary>
+<Entry id="DictionaryEntry0" input="true" name="inputPayload" output="false" type="object"/>
+<Entry id="DictionaryEntry1" input="false" name="outputPayload" output="true" type="object"/>
+</Dictionary>
+</Global>
+<Phase number="0">
+<Node enabled="enabled" guiName="Foreach 'Placemark' -&gt; 'array'" guiX="460" guiY="120" id="FOREACH_PLACEMARK_ARRAY" transformClass="com.mulesoft.datamapper.transform.MelRecordTransform" type="REFORMAT">
+<attr name="melScript"><![CDATA[//MEL
+//START -> DO NOT REMOVE
+output.__id = input.__id;
+//END -> DO NOT REMOVE
+output.name = input.name;
+output.description = input.description;
+output.coordinates = input.coordinates;
+]]></attr>
+</Node>
+<Node cacheInMemory="true" charset="UTF-8" enabled="enabled" fileURL="dict:outputPayload" guiName="JSON WRITER" guiX="900" guiY="20" id="JSON_WRITER0" type="JSON_WRITER">
+<attr name="__isJsonSchema"><![CDATA[false]]></attr>
+<attr name="mapping"><![CDATA[<?xml version="1.0" encoding="UTF-8"?>
+<clover:collection clover:name="array" xmlns:clover="http://www.cloveretl.com/ns/xmlmapping">
+  <item clover:inPort="0">
+    <name>$0.name</name>
+    <description>$0.description</description>
+    <Point>
+      <coordinates>$0.coordinates</coordinates>
+    </Point>
+  </item>
+</clover:collection>]]></attr>
+<attr name="_data_format"><![CDATA[JSON]]></attr>
+<attr name="jsonSchemaURL"><![CDATA[/Users/alejandro/Desktop/fileportafolio/json.json]]></attr>
+</Node>
+<Node charset="UTF-8" enabled="enabled" fileURL="dict:inputPayload" guiName="XML READER" guiX="20" guiY="20" id="XML_READER0" type="XML_READER">
+<attr name="xmlSchemaURL"><![CDATA[./src/test/resources/kml_10.xsd]]></attr>
+<attr name="mapping"><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<Context outPort="0" sequenceField="__id" xpath="/kml/Placemark">
+  <Mapping cloverField="name" trim="true" xpath="name"/>
+  <Mapping cloverField="description" trim="true" xpath="description"/>
+  <Mapping cloverField="coordinates" trim="true" xpath="Point/coordinates"/>
+</Context>
+]]></attr>
+<attr name="_data_format"><![CDATA[XML]]></attr>
+<attr name="__rootGlobalElementName"><![CDATA[kml]]></attr>
+</Node>
+<Edge debugMode="true" fromNode="FOREACH_PLACEMARK_ARRAY:0" guiBendpoints="" id="Edge3" inPort="Port 0 (in)" metadata="0265723c-4b5d-4f41-81a1-f1196a741113" outPort="Port 0 (out)" toNode="JSON_WRITER0:0"/>
+<Edge debugMode="true" fromNode="XML_READER0:0" guiBendpoints="" id="Edge2" inPort="Port 0 (in)" metadata="ed64796e-cffe-404a-87f0-d806a1530f07" outPort="Port 0 (out)" toNode="FOREACH_PLACEMARK_ARRAY:0"/>
+</Phase>
+</Graph>

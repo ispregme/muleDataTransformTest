@@ -1,0 +1,9 @@
+INDEX VERSION 1.127+/Users/alejandro/AnypointStudio/workspace/.metadata/.plugins/org.eclipse.jdt.core
+3875826922.index
+1709900233.index
+1398640973.index
+1391999227.index
+1607896456.index
+317469023.index
+2416139388.index
+1420984093.index

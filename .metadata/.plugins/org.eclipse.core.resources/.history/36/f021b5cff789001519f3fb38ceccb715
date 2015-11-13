@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:pop3s="http://www.mulesoft.org/schema/mule/pop3s" xmlns:pop3="http://www.mulesoft.org/schema/mule/pop3" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/pop3 http://www.mulesoft.org/schema/mule/pop3/current/mule-pop3.xsd
+http://www.mulesoft.org/schema/mule/pop3s http://www.mulesoft.org/schema/mule/pop3s/current/mule-pop3s.xsd">
+    <pop3s:connector name="POP3" validateConnections="true" doc:name="POP3">
+        <pop3s:tls-client path="" storePassword=""/>
+        <pop3s:tls-trust-store path="" storePassword=""/>
+    </pop3s:connector>
+    <flow name="portafolio1cFlow">
+        <pop3:inbound-endpoint host="pop.gmail.com" port="995" user="iap1516" password="qwerty666666" connector-ref="POP3" responseTimeout="10000" doc:name="POP3"/>
+    </flow>
+</mule>
